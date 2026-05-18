@@ -1,0 +1,865 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  MODERATOR
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  UNDISCLOSED
+}
+
+enum PrivacyLevel {
+  PRIVATE
+  FRIENDS
+  FOLLOWERS
+  PUBLIC
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+  APPLE
+  KAKAO
+  GITHUB
+}
+
+enum AuthIdentityStatus {
+  ACTIVE
+  REVOKED
+}
+
+enum FollowStatus {
+  ACTIVE
+  MUTED
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  REMOVED
+}
+
+enum ProgramVisibility {
+  PRIVATE
+  PUBLIC
+  SYSTEM
+}
+
+enum ProgramStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ProgramMethod {
+  CUSTOM
+  WENDLER531
+  STRONGLIFTS
+  STARTING_STRENGTH
+  UPPER_LOWER
+  PUSH_PULL_LEGS
+  PHUL
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum WorkoutStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+  DELETED
+}
+
+enum ExerciseLogSource {
+  MANUAL
+  PROGRAM
+  RECOMMENDATION
+  IMPORT
+  AI_GENERATED
+}
+
+enum SetType {
+  WARMUP
+  WORKING
+  BACKOFF
+  DROPSET
+  FAILURE
+  AMRAP
+}
+
+enum MuscleRole {
+  PRIMARY
+  SECONDARY
+  STABILIZER
+}
+
+enum RecommendationStrategy {
+  RULE_ENGINE
+  HYBRID
+  LLM_ASSISTED
+}
+
+enum RecommendationStatus {
+  GENERATED
+  VIEWED
+  ACCEPTED
+  REJECTED
+  OVERRIDDEN
+  APPLIED
+  EXPIRED
+}
+
+enum RecommendationActionType {
+  VIEW
+  ACCEPT
+  REJECT
+  OVERRIDE
+  APPLY
+  DISMISS
+}
+
+enum StorageProvider {
+  S3
+  CLOUDFLARE_R2
+  SUPABASE_STORAGE
+  GCS
+  LOCAL
+}
+
+enum MediaPurpose {
+  PROFILE_IMAGE
+  WORKOUT_ATTACHMENT
+  EQUIPMENT_SCAN
+  FEED_ATTACHMENT
+}
+
+enum MediaStatus {
+  PENDING
+  READY
+  FAILED
+  DELETED
+}
+
+enum EquipmentAnalysisStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  VERIFIED
+  REJECTED
+}
+
+enum ModelProvider {
+  INTERNAL
+  OPENAI
+  ANTHROPIC
+  GOOGLE
+  AWS
+  CLOUDFLARE
+}
+
+enum FeedEventType {
+  WORKOUT_COMPLETED
+  PR_ACHIEVED
+  ACHIEVEMENT_UNLOCKED
+  FRIENDSHIP_CREATED
+  FOLLOW_CREATED
+}
+
+enum NotificationKind {
+  FRIEND_REQUEST
+  FRIEND_ACCEPTED
+  FOLLOWED
+  WORKOUT_REMINDER
+  PR_ACHIEVED
+  AI_RECOMMENDATION
+  SYSTEM
+}
+
+enum NotificationChannel {
+  IN_APP
+  PUSH
+  EMAIL
+}
+
+enum NotificationDeliveryStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+  CLICKED
+}
+
+model User {
+  id                        String                   @id @default(uuid()) @db.Uuid
+  email                     String                   @db.VarChar(320)
+  emailNormalized           String                   @unique @db.VarChar(320)
+  passwordHash              String?                  @db.VarChar(255)
+  role                      UserRole                 @default(USER)
+  status                    UserStatus               @default(ACTIVE)
+  privacyLevel              PrivacyLevel             @default(FOLLOWERS)
+  lastLoginAt               DateTime?
+  createdAt                 DateTime                 @default(now())
+  updatedAt                 DateTime                 @updatedAt
+  profile                   UserProfile?
+  settings                  UserSetting?
+  authIdentities            AuthIdentity[]
+  uploadedMedia             MediaAsset[]             @relation("uploadedMedia")
+  followers                 UserFollow[]             @relation("followedUser")
+  following                 UserFollow[]             @relation("followerUser")
+  friendshipsA              Friendship[]             @relation("friendshipA")
+  friendshipsB              Friendship[]             @relation("friendshipB")
+  friendshipRequests        Friendship[]             @relation("friendshipRequestedBy")
+  programsCreated           Program[]                @relation("programCreatedBy")
+  programVersionsCreated    ProgramVersion[]         @relation("programVersionCreatedBy")
+  enrollments               UserProgramEnrollment[]
+  workoutSessions           WorkoutSession[]
+  exerciseStats             UserExerciseStat[]
+  dailyStats                UserWorkoutDailyStat[]
+  weeklyStats               UserWorkoutWeeklyStat[]
+  aiRecommendations         AiRecommendation[]       @relation("recommendationOwner")
+  aiRecommendationActions   AiRecommendationAction[]
+  feedEvents                FeedEvent[]              @relation("feedActor")
+  notifications             Notification[]           @relation("notificationRecipient")
+  notificationsActed        Notification[]           @relation("notificationActor")
+  pushDevices               UserPushDevice[]
+  equipmentAnalysesRequested EquipmentAnalysis[]     @relation("analysisRequestedBy")
+  equipmentAnalysesVerified EquipmentAnalysis[]      @relation("analysisVerifiedBy")
+}
+
+model UserProfile {
+  userId                    String      @id @db.Uuid
+  displayName               String      @db.VarChar(50)
+  username                  String?     @unique @db.VarChar(30)
+  bio                       String?     @db.VarChar(280)
+  avatarMediaId             BigInt?     @unique
+  birthDate                 DateTime?   @db.Date
+  gender                    Gender?
+  heightMm                  Int?
+  bodyWeightGrams           Int?
+  trainingExperienceMonths  Int?        @db.SmallInt
+  primaryGoal               String?     @db.VarChar(80)
+  preferredSessionMinutes   Int?        @db.SmallInt
+  weeklyWorkoutDays         Int?        @db.SmallInt
+  injuryNotes               String?
+  createdAt                 DateTime    @default(now())
+  updatedAt                 DateTime    @updatedAt
+  user                      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  avatarMedia               MediaAsset? @relation("avatarMedia", fields: [avatarMediaId], references: [id], onDelete: SetNull)
+}
+
+model UserSetting {
+  userId                  String       @id @db.Uuid
+  locale                  String       @default("ko-KR") @db.VarChar(10)
+  timezone                String       @default("Asia/Seoul") @db.VarChar(64)
+  theme                   String       @default("system") @db.VarChar(16)
+  pushEnabled             Boolean      @default(true)
+  emailEnabled            Boolean      @default(true)
+  marketingOptIn          Boolean      @default(false)
+  friendRequestEnabled    Boolean      @default(true)
+  feedVisibility          PrivacyLevel @default(FOLLOWERS)
+  workoutVisibility       PrivacyLevel @default(FOLLOWERS)
+  allowSearchByEmail      Boolean      @default(false)
+  allowSearchByUsername   Boolean      @default(true)
+  createdAt               DateTime     @default(now())
+  updatedAt               DateTime     @updatedAt
+  user                    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuthIdentity {
+  id                     BigInt             @id @default(autoincrement())
+  userId                 String             @db.Uuid
+  provider               AuthProvider
+  providerUserId         String             @db.VarChar(191)
+  providerEmail          String?            @db.VarChar(320)
+  status                 AuthIdentityStatus @default(ACTIVE)
+  accessTokenEncrypted   String?
+  refreshTokenEncrypted  String?
+  lastUsedAt             DateTime?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@index([userId, status])
+}
+
+model UserFollow {
+  id          BigInt       @id @default(autoincrement())
+  followerId  String       @db.Uuid
+  followingId String       @db.Uuid
+  status      FollowStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now())
+  mutedAt     DateTime?
+  follower    User         @relation("followerUser", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User         @relation("followedUser", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followingId, createdAt])
+  @@index([followerId, createdAt])
+}
+
+model Friendship {
+  id            BigInt           @id @default(autoincrement())
+  userAId       String           @db.Uuid
+  userBId       String           @db.Uuid
+  requestedById String           @db.Uuid
+  status        FriendshipStatus @default(PENDING)
+  requestedAt   DateTime         @default(now())
+  respondedAt   DateTime?
+  createdAt     DateTime         @default(now())
+  userA         User             @relation("friendshipA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB         User             @relation("friendshipB", fields: [userBId], references: [id], onDelete: Cascade)
+  requestedBy   User             @relation("friendshipRequestedBy", fields: [requestedById], references: [id], onDelete: Cascade)
+
+  @@unique([userAId, userBId])
+  @@index([requestedById, status])
+}
+
+model FeedEvent {
+  id          BigInt        @id @default(autoincrement())
+  actorUserId String        @db.Uuid
+  eventType   FeedEventType
+  visibility  PrivacyLevel  @default(FOLLOWERS)
+  objectType  String        @db.VarChar(40)
+  objectId    String        @db.VarChar(64)
+  payload     Json
+  occurredAt  DateTime      @default(now())
+  actorUser   User          @relation("feedActor", fields: [actorUserId], references: [id], onDelete: Cascade)
+
+  @@index([actorUserId, occurredAt])
+  @@index([eventType, occurredAt])
+}
+
+model Exercise {
+  id                          String                 @id @default(uuid()) @db.Uuid
+  slug                        String                 @unique @db.VarChar(120)
+  nameKo                      String                 @db.VarChar(120)
+  nameEn                      String?                @db.VarChar(120)
+  bodyPart                    String                 @db.VarChar(40)
+  movementPattern             String?                @db.VarChar(40)
+  description                 String?
+  isBodyweight                Boolean                @default(false)
+  isUnilateral                Boolean                @default(false)
+  createdAt                   DateTime               @default(now())
+  updatedAt                   DateTime               @updatedAt
+  muscles                     ExerciseMuscle[]
+  equipmentMappings           ExerciseEquipment[]
+  programExercises            ProgramDayExercise[]
+  workoutExercises            WorkoutExercise[]
+  recommendationItems         AiRecommendationItem[] @relation("recommendedExercise")
+  substitutedRecommendationItems AiRecommendationItem[] @relation("substitutedExercise")
+  userExerciseStats           UserExerciseStat[]
+}
+
+model ExerciseMuscle {
+  id           BigInt      @id @default(autoincrement())
+  exerciseId   String      @db.Uuid
+  muscleName   String      @db.VarChar(60)
+  role         MuscleRole
+  loadPriority Int?        @db.SmallInt
+  exercise     Exercise    @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  @@unique([exerciseId, muscleName, role])
+}
+
+model Equipment {
+  id                  String                        @id @default(uuid()) @db.Uuid
+  slug                String                        @unique @db.VarChar(120)
+  name                String                        @db.VarChar(120)
+  category            String                        @db.VarChar(60)
+  brand               String?                       @db.VarChar(80)
+  description         String?
+  createdAt           DateTime                      @default(now())
+  updatedAt           DateTime                      @updatedAt
+  exerciseMappings    ExerciseEquipment[]
+  analysisPredictions EquipmentAnalysisPrediction[]
+  verifiedAnalyses    EquipmentAnalysis[]           @relation("verifiedEquipment")
+}
+
+model ExerciseEquipment {
+  id          BigInt    @id @default(autoincrement())
+  exerciseId  String    @db.Uuid
+  equipmentId String    @db.Uuid
+  isPrimary   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  exercise    Exercise  @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  equipment   Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  @@unique([exerciseId, equipmentId])
+}
+
+model Program {
+  id              String            @id @default(uuid()) @db.Uuid
+  slug            String?           @unique @db.VarChar(120)
+  name            String            @db.VarChar(120)
+  description     String?
+  method          ProgramMethod     @default(CUSTOM)
+  visibility      ProgramVisibility @default(PRIVATE)
+  isSystem        Boolean           @default(false)
+  createdByUserId String?           @db.Uuid
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  createdByUser   User?             @relation("programCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  versions        ProgramVersion[]
+  enrollments     UserProgramEnrollment[]
+}
+
+model ProgramVersion {
+  id                      String              @id @default(uuid()) @db.Uuid
+  programId               String              @db.Uuid
+  versionNo               Int
+  status                  ProgramStatus       @default(DRAFT)
+  basedOnVersionId        String?             @db.Uuid
+  notes                   String?
+  rulesJson               Json?
+  progressionJson         Json?
+  deloadJson              Json?
+  estimatedSessionMinutes Int?                @db.SmallInt
+  createdByUserId         String?             @db.Uuid
+  publishedAt             DateTime?
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+  program                 Program             @relation(fields: [programId], references: [id], onDelete: Cascade)
+  basedOnVersion          ProgramVersion?     @relation("programVersionBase", fields: [basedOnVersionId], references: [id], onDelete: SetNull)
+  derivedVersions         ProgramVersion[]    @relation("programVersionBase")
+  createdByUser           User?               @relation("programVersionCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  days                    ProgramDay[]
+  enrollments             UserProgramEnrollment[]
+
+  @@unique([programId, versionNo])
+}
+
+model ProgramDay {
+  id                  BigInt               @id @default(autoincrement())
+  programVersionId    String               @db.Uuid
+  weekIndex           Int                  @db.SmallInt
+  dayIndex            Int                  @db.SmallInt
+  label               String               @db.VarChar(80)
+  focus               String?              @db.VarChar(80)
+  estimatedDurationSec Int?
+  notes               String?
+  programVersion      ProgramVersion       @relation(fields: [programVersionId], references: [id], onDelete: Cascade)
+  exercises           ProgramDayExercise[]
+
+  @@unique([programVersionId, weekIndex, dayIndex])
+  @@index([programVersionId, dayIndex])
+}
+
+model ProgramDayExercise {
+  id                 BigInt          @id @default(autoincrement())
+  programDayId       BigInt
+  exerciseId         String          @db.Uuid
+  sortOrder          Int             @db.SmallInt
+  plannedSets        Int?            @db.SmallInt
+  plannedRepsMin     Int?            @db.SmallInt
+  plannedRepsMax     Int?            @db.SmallInt
+  plannedWeightGrams Int?
+  restSeconds        Int?            @db.SmallInt
+  tempo              String?         @db.VarChar(20)
+  rirTarget          Int?            @db.SmallInt
+  rpeTarget          Decimal?        @db.Decimal(3, 1)
+  intensityType      String?         @db.VarChar(40)
+  intensityValue     Int?
+  isOptional         Boolean         @default(false)
+  progressionRule    Json?
+  notes              String?
+  programDay         ProgramDay      @relation(fields: [programDayId], references: [id], onDelete: Cascade)
+  exercise           Exercise        @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
+  workoutExercises   WorkoutExercise[]
+
+  @@unique([programDayId, sortOrder])
+  @@index([exerciseId])
+}
+
+model UserProgramEnrollment {
+  id                    BigInt           @id @default(autoincrement())
+  userId                String           @db.Uuid
+  programId             String           @db.Uuid
+  programVersionId      String           @db.Uuid
+  startedOn             DateTime         @db.Date
+  endedOn               DateTime?        @db.Date
+  status                EnrollmentStatus @default(ACTIVE)
+  currentWeek           Int              @default(1) @db.SmallInt
+  currentDayIndex       Int              @default(1) @db.SmallInt
+  trainingMaxSnapshot   Json?
+  constraintsSnapshot   Json?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  user                  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  program               Program          @relation(fields: [programId], references: [id], onDelete: Restrict)
+  programVersion        ProgramVersion   @relation(fields: [programVersionId], references: [id], onDelete: Restrict)
+  sessions              WorkoutSession[]
+  recommendations       AiRecommendation[]
+
+  @@index([userId, status])
+  @@index([programVersionId, status])
+}
+
+model WorkoutSession {
+  id                     BigInt             @id @default(autoincrement())
+  userId                 String             @db.Uuid
+  programEnrollmentId    BigInt?
+  appliedRecommendationId BigInt?
+  sessionDate            DateTime           @db.Date
+  startedAt              DateTime?
+  endedAt                DateTime?
+  durationSec            Int?
+  status                 WorkoutStatus      @default(IN_PROGRESS)
+  source                 ExerciseLogSource  @default(MANUAL)
+  locationText           String?            @db.VarChar(120)
+  note                   String?
+  energyScore            Int?               @db.SmallInt
+  fatigueScore           Int?               @db.SmallInt
+  painScore              Int?               @db.SmallInt
+  totalVolumeGrams       BigInt             @default(0)
+  totalReps              Int                @default(0)
+  totalSets              Int                @default(0)
+  caloriesBurned         Int?
+  performanceScore       Int?               @db.SmallInt
+  estimated1RmSnapshot   Json?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  programEnrollment      UserProgramEnrollment? @relation(fields: [programEnrollmentId], references: [id], onDelete: SetNull)
+  appliedRecommendation  AiRecommendation?  @relation("recommendationAppliedToSession", fields: [appliedRecommendationId], references: [id], onDelete: SetNull)
+  sourceForRecommendations AiRecommendation[] @relation("recommendationSourceSession")
+  exercises              WorkoutExercise[]
+
+  @@index([userId, sessionDate])
+  @@index([programEnrollmentId, sessionDate])
+}
+
+model WorkoutExercise {
+  id                 BigInt            @id @default(autoincrement())
+  workoutSessionId   BigInt
+  exerciseId         String            @db.Uuid
+  programDayExerciseId BigInt?
+  recommendationItemId BigInt?
+  sortOrder          Int               @db.SmallInt
+  source             ExerciseLogSource @default(MANUAL)
+  plannedSets        Int?              @db.SmallInt
+  plannedRepsMin     Int?              @db.SmallInt
+  plannedRepsMax     Int?              @db.SmallInt
+  plannedWeightGrams Int?
+  actualSets         Int               @default(0) @db.SmallInt
+  actualReps         Int               @default(0)
+  topSetWeightGrams  Int?
+  bestSetReps        Int?              @db.SmallInt
+  totalVolumeGrams   BigInt            @default(0)
+  averageRpe         Decimal?          @db.Decimal(3, 1)
+  estimated1RmGrams  Int?
+  notes              String?
+  workoutSession     WorkoutSession    @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
+  exercise           Exercise          @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
+  programDayExercise ProgramDayExercise? @relation(fields: [programDayExerciseId], references: [id], onDelete: SetNull)
+  recommendationItem AiRecommendationItem? @relation(fields: [recommendationItemId], references: [id], onDelete: SetNull)
+  sets               WorkoutSet[]
+
+  @@unique([workoutSessionId, sortOrder])
+  @@index([exerciseId, workoutSessionId])
+}
+
+model WorkoutSet {
+  id               BigInt     @id @default(autoincrement())
+  workoutExerciseId BigInt
+  setIndex         Int        @db.SmallInt
+  setType          SetType    @default(WORKING)
+  weightGrams      Int?
+  reps             Int?       @db.SmallInt
+  distanceMeters   Int?
+  durationSec      Int?
+  restSeconds      Int?
+  rpe              Decimal?   @db.Decimal(3, 1)
+  rir              Int?       @db.SmallInt
+  tempo            String?    @db.VarChar(20)
+  isCompleted      Boolean    @default(true)
+  isFailure        Boolean    @default(false)
+  isPersonalRecord Boolean    @default(false)
+  recordedAt       DateTime   @default(now())
+  meta             Json?
+  workoutExercise  WorkoutExercise @relation(fields: [workoutExerciseId], references: [id], onDelete: Cascade)
+
+  @@unique([workoutExerciseId, setIndex])
+  @@index([recordedAt])
+}
+
+model UserExerciseStat {
+  id                   BigInt   @id @default(autoincrement())
+  userId               String   @db.Uuid
+  exerciseId           String   @db.Uuid
+  lastPerformedAt      DateTime?
+  bestWeightGrams      Int?
+  bestEstimated1RmGrams Int?
+  bestVolumeGrams      BigInt?
+  totalSessions        Int      @default(0)
+  totalSets            Int      @default(0)
+  totalReps            Int      @default(0)
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercise             Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, exerciseId])
+}
+
+model UserWorkoutDailyStat {
+  id                  BigInt   @id @default(autoincrement())
+  userId              String   @db.Uuid
+  statDate            DateTime @db.Date
+  totalSessions       Int      @default(0)
+  totalVolumeGrams    BigInt   @default(0)
+  totalDurationSec    Int      @default(0)
+  totalSets           Int      @default(0)
+  totalReps           Int      @default(0)
+  avgPerformanceScore Decimal? @db.Decimal(5, 2)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, statDate])
+}
+
+model UserWorkoutWeeklyStat {
+  id                  BigInt   @id @default(autoincrement())
+  userId              String   @db.Uuid
+  isoYear             Int      @db.SmallInt
+  isoWeek             Int      @db.SmallInt
+  totalSessions       Int      @default(0)
+  totalVolumeGrams    BigInt   @default(0)
+  totalDurationSec    Int      @default(0)
+  totalSets           Int      @default(0)
+  totalReps           Int      @default(0)
+  avgPerformanceScore Decimal? @db.Decimal(5, 2)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, isoYear, isoWeek])
+}
+
+model AiRecommendation {
+  id                    BigInt                 @id @default(autoincrement())
+  userId                String                 @db.Uuid
+  programEnrollmentId   BigInt?
+  sourceWorkoutSessionId BigInt?
+  targetSessionDate     DateTime?              @db.Date
+  strategy              RecommendationStrategy
+  status                RecommendationStatus   @default(GENERATED)
+  modelProvider         ModelProvider?
+  modelName             String?                @db.VarChar(80)
+  engineVersion         String                 @db.VarChar(40)
+  promptVersion         String?                @db.VarChar(40)
+  featureSnapshot       Json
+  inputSnapshot         Json
+  outputSnapshot        Json
+  summaryText           String?
+  rationaleText         String?
+  confidence            Decimal?               @db.Decimal(5, 4)
+  recommendedDurationSec Int?
+  latencyMs             Int?
+  tokensIn              Int?
+  tokensOut             Int?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  user                  User                   @relation("recommendationOwner", fields: [userId], references: [id], onDelete: Cascade)
+  programEnrollment     UserProgramEnrollment? @relation(fields: [programEnrollmentId], references: [id], onDelete: SetNull)
+  sourceWorkoutSession  WorkoutSession?        @relation("recommendationSourceSession", fields: [sourceWorkoutSessionId], references: [id], onDelete: SetNull)
+  appliedSessions       WorkoutSession[]       @relation("recommendationAppliedToSession")
+  items                 AiRecommendationItem[]
+  actions               AiRecommendationAction[]
+
+  @@index([userId, createdAt])
+  @@index([programEnrollmentId, createdAt])
+}
+
+model AiRecommendationItem {
+  id                       BigInt     @id @default(autoincrement())
+  recommendationId         BigInt
+  exerciseId               String     @db.Uuid
+  sortOrder                Int        @db.SmallInt
+  recommendedSets          Int?       @db.SmallInt
+  recommendedRepsMin       Int?       @db.SmallInt
+  recommendedRepsMax       Int?       @db.SmallInt
+  recommendedWeightGrams   Int?
+  recommendedRestSeconds   Int?
+  recommendedRir           Int?       @db.SmallInt
+  recommendedRpe           Decimal?   @db.Decimal(3, 1)
+  substitutionForExerciseId String?   @db.Uuid
+  explanation              String?
+  metadata                 Json?
+  createdAt                DateTime   @default(now())
+  recommendation           AiRecommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  exercise                 Exercise   @relation("recommendedExercise", fields: [exerciseId], references: [id], onDelete: Restrict)
+  substitutionForExercise  Exercise?  @relation("substitutedExercise", fields: [substitutionForExerciseId], references: [id], onDelete: SetNull)
+  workoutExercises         WorkoutExercise[]
+
+  @@unique([recommendationId, sortOrder])
+}
+
+model AiRecommendationAction {
+  id               BigInt                    @id @default(autoincrement())
+  recommendationId BigInt
+  userId           String                    @db.Uuid
+  actionType       RecommendationActionType
+  beforeSnapshot   Json?
+  afterSnapshot    Json?
+  createdAt        DateTime                  @default(now())
+  recommendation   AiRecommendation          @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  user             User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([recommendationId, actionType, createdAt])
+}
+
+model MediaAsset {
+  id               BigInt          @id @default(autoincrement())
+  uploadedByUserId String?         @db.Uuid
+  storageProvider  StorageProvider
+  bucket           String          @db.VarChar(120)
+  objectKey        String          @db.VarChar(255)
+  cdnUrl           String?
+  mimeType         String          @db.VarChar(120)
+  byteSize         BigInt
+  checksumSha256   String?         @db.Char(64)
+  widthPx          Int?
+  heightPx         Int?
+  durationMs       Int?
+  purpose          MediaPurpose
+  status           MediaStatus     @default(PENDING)
+  originalFilename String?         @db.VarChar(255)
+  metadata         Json?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  uploadedByUser   User?           @relation("uploadedMedia", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+  avatarForProfile UserProfile?    @relation("avatarMedia")
+  equipmentAnalyses EquipmentAnalysis[]
+
+  @@unique([bucket, objectKey])
+  @@index([uploadedByUserId, purpose, createdAt])
+}
+
+model EquipmentAnalysis {
+  id                 BigInt                  @id @default(autoincrement())
+  requestedByUserId  String                  @db.Uuid
+  sourceMediaId      BigInt
+  status             EquipmentAnalysisStatus @default(QUEUED)
+  modelProvider      ModelProvider
+  modelName          String?                 @db.VarChar(80)
+  modelVersion       String?                 @db.VarChar(40)
+  requestPayload     Json?
+  rawResponse        Json?
+  verifiedEquipmentId String?                @db.Uuid
+  verifiedByUserId   String?                 @db.Uuid
+  verificationNote   String?
+  analyzedAt         DateTime?
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  requestedByUser    User                    @relation("analysisRequestedBy", fields: [requestedByUserId], references: [id], onDelete: Cascade)
+  sourceMedia        MediaAsset              @relation(fields: [sourceMediaId], references: [id], onDelete: Cascade)
+  verifiedEquipment  Equipment?              @relation("verifiedEquipment", fields: [verifiedEquipmentId], references: [id], onDelete: SetNull)
+  verifiedByUser     User?                   @relation("analysisVerifiedBy", fields: [verifiedByUserId], references: [id], onDelete: SetNull)
+  predictions        EquipmentAnalysisPrediction[]
+
+  @@index([requestedByUserId, createdAt])
+  @@index([status, createdAt])
+}
+
+model EquipmentAnalysisPrediction {
+  id                 BigInt            @id @default(autoincrement())
+  equipmentAnalysisId BigInt
+  equipmentId        String?           @db.Uuid
+  label              String            @db.VarChar(120)
+  confidence         Decimal           @db.Decimal(5, 4)
+  rank               Int               @db.SmallInt
+  boundingBox        Json?
+  matchedExercisesJson Json?
+  isChosen           Boolean           @default(false)
+  createdAt          DateTime          @default(now())
+  equipmentAnalysis  EquipmentAnalysis @relation(fields: [equipmentAnalysisId], references: [id], onDelete: Cascade)
+  equipment          Equipment?        @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
+
+  @@unique([equipmentAnalysisId, rank])
+}
+
+model UserPushDevice {
+  id               BigInt                 @id @default(autoincrement())
+  userId           String                 @db.Uuid
+  platform         String                 @db.VarChar(30)
+  provider         String                 @db.VarChar(30)
+  token            String
+  appVersion       String?                @db.VarChar(30)
+  lastSeenAt       DateTime?
+  isActive         Boolean                @default(true)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  user             User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries       NotificationDelivery[]
+
+  @@unique([provider, token])
+  @@index([userId, isActive])
+}
+
+model Notification {
+  id                BigInt               @id @default(autoincrement())
+  userId            String               @db.Uuid
+  kind              NotificationKind
+  title             String               @db.VarChar(120)
+  body              String               @db.VarChar(500)
+  payload           Json?
+  actorUserId       String?              @db.Uuid
+  relatedEntityType String?              @db.VarChar(40)
+  relatedEntityId   String?              @db.VarChar(64)
+  scheduledAt       DateTime?
+  readAt            DateTime?
+  clickedAt         DateTime?
+  createdAt         DateTime             @default(now())
+  user              User                 @relation("notificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  actorUser         User?                @relation("notificationActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  deliveries        NotificationDelivery[]
+
+  @@index([userId, readAt, createdAt])
+  @@index([scheduledAt])
+}
+
+model NotificationDelivery {
+  id                BigInt                      @id @default(autoincrement())
+  notificationId    BigInt
+  channel           NotificationChannel
+  deviceId          BigInt?
+  status            NotificationDeliveryStatus @default(PENDING)
+  providerMessageId String?                     @db.VarChar(191)
+  attemptedAt       DateTime?                   @default(now())
+  deliveredAt       DateTime?
+  failureReason     String?                     @db.VarChar(255)
+  createdAt         DateTime                    @default(now())
+  notification      Notification                @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  device            UserPushDevice?             @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+
+  @@index([notificationId, channel])
+  @@index([status, attemptedAt])
+}
