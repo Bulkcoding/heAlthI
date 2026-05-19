@@ -1030,6 +1030,66 @@ table {
   box-shadow: 0 0 0 1px rgba(214, 255, 41, 0.18), 0 0 18px rgba(214, 255, 41, 0.08);
 }
 
+.pf-choice-card--body-part {
+  justify-items: center;
+  min-height: 156px;
+  padding: 16px 14px;
+  text-align: center;
+}
+
+.pf-choice-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 88px;
+  height: 88px;
+  padding: 8px;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 226, 74, 0.22), rgba(255, 226, 74, 0) 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 242, 232, 0.86));
+  box-shadow: inset 0 0 0 1px rgba(26, 26, 24, 0.06);
+}
+
+[data-theme="dark"] .pf-choice-card__icon {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(214, 255, 41, 0.18), rgba(214, 255, 41, 0) 72%),
+    linear-gradient(180deg, rgba(20, 22, 18, 0.92), rgba(12, 14, 12, 0.78));
+  box-shadow:
+    inset 0 0 0 1px rgba(214, 255, 41, 0.12),
+    0 0 24px rgba(214, 255, 41, 0.08);
+}
+
+.pf-choice-card--body-part strong {
+  font-size: 0.98rem;
+}
+
+.pf-muscle-icon {
+  width: 100%;
+  height: 100%;
+  color: rgba(77, 82, 77, 0.72);
+}
+
+[data-theme="dark"] .pf-muscle-icon {
+  color: rgba(244, 247, 241, 0.84);
+}
+
+.pf-muscle-icon__outline {
+  stroke: currentColor;
+  stroke-width: 2.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pf-muscle-icon__accent {
+  fill: var(--pf-accent-strong);
+  opacity: 0.92;
+}
+
+.pf-choice-card--active .pf-choice-card__icon {
+  transform: translateY(-1px);
+}
+
 .pf-exercise-browser {
   display: grid;
   gap: 14px;

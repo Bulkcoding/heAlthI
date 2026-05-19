@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { BodyPartIcon } from "@/components/body-part-icon";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Viewer } from "@/lib/viewer";
@@ -44,7 +45,8 @@ const activityFeed = [
   { user: "박재현", detail: "7일 연속 운동 완료", time: "1시간 전" }
 ];
 
-const bodyParts = ["가슴", "등", "어깨", "이두", "삼두", "하체", "복근", "전신", "유산소"];
+const bodyParts = ["가슴", "등", "어깨", "이두", "삼두", "하체", "복근", "전신", "유산소"] as const;
+type BodyPart = (typeof bodyParts)[number];
 
 const goals: GoalOption[] = [
   { key: "strength", title: "근력 향상", description: "중량 상승과 기록 갱신에 집중" },
@@ -381,6 +383,29 @@ function BodyFigure({ parts }: { parts: string[] }) {
   );
 }
 
+function BodyPartChoiceCard({
+  active = false,
+  label,
+  onClick
+}: {
+  active?: boolean;
+  label: BodyPart;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={active ? "pf-choice-card pf-choice-card--body-part pf-choice-card--active" : "pf-choice-card pf-choice-card--body-part"}
+      onClick={onClick}
+    >
+      <span className="pf-choice-card__icon" aria-hidden="true">
+        <BodyPartIcon name={label} />
+      </span>
+      <strong>{label}</strong>
+    </button>
+  );
+}
+
 function DashboardWizard({
   open,
   onClose
@@ -390,7 +415,7 @@ function DashboardWizard({
 }) {
   const router = useRouter();
   const [step, setStep] = useState(1);
-  const [selectedParts, setSelectedParts] = useState<string[]>(["가슴", "어깨", "삼두"]);
+  const [selectedParts, setSelectedParts] = useState<BodyPart[]>(["가슴", "어깨", "삼두"]);
   const [selectedGoal, setSelectedGoal] = useState<GoalKey>("muscle");
   const [selectedDuration, setSelectedDuration] = useState<DurationKey>("30to60");
 
@@ -399,7 +424,7 @@ function DashboardWizard({
     [selectedDuration, selectedGoal, selectedParts]
   );
 
-  function toggleBodyPart(part: string) {
+  function toggleBodyPart(part: BodyPart) {
     setSelectedParts((current) => {
       if (current.includes(part)) {
         if (current.length === 1) return current;
@@ -480,14 +505,12 @@ function DashboardWizard({
                   const active = selectedParts.includes(part);
 
                   return (
-                    <button
+                    <BodyPartChoiceCard
                       key={part}
-                      type="button"
-                      className={active ? "pf-choice-card pf-choice-card--active" : "pf-choice-card"}
+                      label={part}
+                      active={active}
                       onClick={() => toggleBodyPart(part)}
-                    >
-                      <strong>{part}</strong>
-                    </button>
+                    />
                   );
                 })}
               </div>
@@ -1095,13 +1118,11 @@ export function TodayWorkoutScreenPage({ viewer = null }: { viewer?: null | View
           <SectionCard title="운동 부위 선택" subtitle="어떤 부위를 운동하셨나요?">
             <div className="pf-choice-grid pf-choice-grid--compact">
               {bodyParts.map((part, index) => (
-                <button
+                <BodyPartChoiceCard
                   key={part}
-                  type="button"
-                  className={index === 0 ? "pf-choice-card pf-choice-card--active" : "pf-choice-card"}
-                >
-                  <strong>{part}</strong>
-                </button>
+                  label={part}
+                  active={index === 0}
+                />
               ))}
             </div>
           </SectionCard>
