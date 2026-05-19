@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "re
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import type { Viewer } from "@/lib/viewer";
 
 const APP_NAME = "REPFORGE";
 const APP_TAGLINE = "AI Strength System";
@@ -109,18 +110,60 @@ function getRoutinePreview(parts: string[], goal: GoalKey, duration: DurationKey
 
 function AppShell({
   children,
-  loggedIn = false
+  viewer = null
 }: {
   children: ReactNode;
-  loggedIn?: boolean;
+  viewer?: null | Viewer;
 }) {
   return (
     <div className="pf-page">
       <div className="pf-container">
-        <Topbar loggedIn={loggedIn} />
+        {viewer ? <AuthenticatedTopbar viewer={viewer} /> : <Topbar />}
         {children}
       </div>
     </div>
+  );
+}
+
+function LogoutButton() {
+  return (
+    <form action="/auth/signout" method="post">
+      <button type="submit" className="pf-button pf-button--ghost">
+        로그아웃
+      </button>
+    </form>
+  );
+}
+
+function AuthenticatedTopbar({ viewer }: { viewer: Viewer }) {
+  return (
+    <header className="pf-topbar">
+      <Link href="/" className="pf-brand">
+        <span className="pf-brand__mark">R</span>
+        <span className="pf-brand__copy">
+          <strong>{APP_NAME}</strong>
+          <small>{APP_TAGLINE}</small>
+        </span>
+      </Link>
+
+      <nav className="pf-topnav">
+        <Link href="/dashboard">대시보드</Link>
+        <Link href="/today-workout">운동 기록</Link>
+        <Link href="/exercise-detail">운동 상세</Link>
+      </nav>
+
+      <div className="pf-topbar__actions">
+        <ThemeToggle />
+        <div className="pf-user-pill">
+          <span className="pf-user-pill__avatar">{viewer.initials}</span>
+          <div>
+            <strong>{viewer.displayName}</strong>
+            <small>{viewer.email}</small>
+          </div>
+        </div>
+        <LogoutButton />
+      </div>
+    </header>
   );
 }
 
@@ -203,10 +246,58 @@ function Sidebar() {
   );
 }
 
-function DashboardLayout({ children }: { children: ReactNode }) {
+function AuthenticatedSidebar({ viewer }: { viewer: Viewer }) {
+  const items = [
+    { label: "대시보드", href: "/dashboard" },
+    { label: "운동 기록", href: "/today-workout" },
+    { label: "루틴", href: "#" },
+    { label: "분석", href: "/exercise-detail" },
+    { label: "AI 추천", href: "#" },
+    { label: "커뮤니티", href: "#" },
+    { label: "챌린지", href: "#" },
+    { label: "설정", href: "#" }
+  ];
+
+  return (
+    <aside className="pf-sidebar">
+      <Link href="/dashboard" className="pf-sidebar__brand">
+        <span className="pf-brand__mark">R</span>
+        <strong>{APP_NAME}</strong>
+      </Link>
+
+      <nav className="pf-sidebar__nav">
+        {items.map((item, index) => (
+          <Link
+            key={item.label}
+            href={item.href}
+            className={index === 0 ? "pf-sidebar__link pf-sidebar__link--active" : "pf-sidebar__link"}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+
+      <div className="pf-sidebar__profile">
+        <span className="pf-user-pill__avatar">{viewer.initials}</span>
+        <div>
+          <strong>{viewer.displayName}</strong>
+          <small>{viewer.email}</small>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+function DashboardLayout({
+  children,
+  viewer = null
+}: {
+  children: ReactNode;
+  viewer?: null | Viewer;
+}) {
   return (
     <div className="pf-dashboard-shell">
-      <Sidebar />
+      {viewer ? <AuthenticatedSidebar viewer={viewer} /> : <Sidebar />}
       <div className="pf-dashboard-main">{children}</div>
     </div>
   );
@@ -525,9 +616,9 @@ function DashboardWizard({
   );
 }
 
-export function LandingPage() {
+export function LandingPage({ viewer = null }: { viewer?: null | Viewer }) {
   return (
-    <AppShell>
+    <AppShell viewer={viewer}>
       <section className="pf-hero">
         <div className="pf-hero__copy">
           <p className="pf-kicker">{APP_TAGLINE}</p>
@@ -597,10 +688,12 @@ export function LandingPage() {
 
 export function LoginScreenPage({
   nextPath = "/dashboard",
-  authError = null
+  authError = null,
+  viewer = null
 }: {
   nextPath?: string;
   authError?: null | string;
+  viewer?: null | Viewer;
 }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -658,7 +751,7 @@ export function LoginScreenPage({
   }
 
   return (
-    <AppShell>
+    <AppShell viewer={viewer}>
       <section className="pf-login">
         <div className="pf-login__visual">
           <div className="pf-login__visual-copy">
@@ -763,7 +856,7 @@ export function LoginScreenPage({
   );
 }
 
-export function DashboardScreenPage() {
+export function DashboardScreenPage({ viewer = null }: { viewer?: null | Viewer }) {
   const [wizardOpen, setWizardOpen] = useState(false);
 
   useEffect(() => {
@@ -784,8 +877,8 @@ export function DashboardScreenPage() {
   }
 
   return (
-    <AppShell loggedIn>
-      <DashboardLayout>
+    <AppShell viewer={viewer}>
+      <DashboardLayout viewer={viewer}>
         <div className="pf-dashboard-header">
           <div>
             <p className="pf-kicker">안녕하세요, 홍길동님</p>
@@ -891,10 +984,10 @@ export function DashboardScreenPage() {
   );
 }
 
-export function ExerciseDetailScreenPage() {
+export function ExerciseDetailScreenPage({ viewer = null }: { viewer?: null | Viewer }) {
   return (
-    <AppShell loggedIn>
-      <DashboardLayout>
+    <AppShell viewer={viewer}>
+      <DashboardLayout viewer={viewer}>
         <div className="pf-dashboard-header">
           <div>
             <p className="pf-kicker">운동 상세</p>
@@ -969,10 +1062,10 @@ export function ExerciseDetailScreenPage() {
   );
 }
 
-export function TodayWorkoutScreenPage() {
+export function TodayWorkoutScreenPage({ viewer = null }: { viewer?: null | Viewer }) {
   return (
-    <AppShell loggedIn>
-      <DashboardLayout>
+    <AppShell viewer={viewer}>
+      <DashboardLayout viewer={viewer}>
         <div className="pf-dashboard-header">
           <div>
             <p className="pf-kicker">운동 기록 추가</p>
