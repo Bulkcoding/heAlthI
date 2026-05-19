@@ -913,9 +913,6 @@ export function DashboardScreenPage({ viewer = null }: { viewer?: null | Viewer 
           </div>
 
           <div className="pf-header-actions">
-            <button type="button" className="pf-button pf-button--secondary" onClick={handleOpenWizard}>
-              오늘 운동 다시 선택
-            </button>
             <button type="button" className="pf-button pf-button--secondary">
               AI 추천 보기
             </button>
@@ -949,7 +946,15 @@ export function DashboardScreenPage({ viewer = null }: { viewer?: null | Viewer 
         </div>
 
         <div className="pf-section-grid">
-          <SectionCard title="오늘의 루틴" subtitle="오늘 첫 로그인 기준으로 추천된 루틴입니다.">
+          <SectionCard
+            title="오늘의 루틴"
+            subtitle="오늘 첫 로그인 기준으로 추천된 루틴입니다."
+            action={
+              <button type="button" className="pf-text-button" onClick={handleOpenWizard}>
+                다시 선택
+              </button>
+            }
+          >
             <div className="pf-routine-card">
               <div className="pf-routine-card__copy">
                 <span>45분 루틴</span>
