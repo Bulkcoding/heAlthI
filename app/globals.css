@@ -71,7 +71,7 @@ body {
     radial-gradient(circle at top left, rgba(242, 210, 62, 0.12), transparent 20%),
     linear-gradient(180deg, var(--pf-bg) 0%, var(--pf-bg-soft) 100%);
   color: var(--pf-text);
-  font-family: "Segoe UI", "Apple SD Gothic Neo", sans-serif;
+  font-family: var(--font-body), "Apple SD Gothic Neo", sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -185,7 +185,7 @@ table {
   border-radius: 12px;
   background: var(--pf-brand-plate);
   color: var(--pf-brand-plate-text);
-  font-family: "Bahnschrift", "Arial Narrow", sans-serif;
+  font-family: var(--font-display), var(--font-body), sans-serif;
   font-weight: 700;
   box-shadow: var(--pf-button-primary-shadow);
 }
@@ -198,8 +198,9 @@ table {
 
 .pf-brand__copy strong,
 .pf-sidebar__brand strong {
-  letter-spacing: 0.06em;
-  font-size: 0.98rem;
+  font-family: var(--font-display), var(--font-body), sans-serif;
+  letter-spacing: 0.02em;
+  font-size: 1rem;
 }
 
 .pf-brand__copy small,
@@ -208,12 +209,22 @@ table {
   color: var(--pf-text-soft);
 }
 
+.pf-user-pill small {
+  display: block;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.82rem;
+}
+
 .pf-topnav {
   display: flex;
   align-items: center;
   gap: 22px;
   color: var(--pf-text-muted);
-  font-size: 0.94rem;
+  font-size: 0.95rem;
+  font-weight: 600;
 }
 
 .pf-topnav a:hover {
@@ -269,7 +280,15 @@ table {
 
 .pf-user-pill {
   grid-template-columns: auto 1fr;
+  gap: 12px;
   align-items: center;
+  min-width: 0;
+}
+
+.pf-user-pill strong {
+  display: block;
+  font-size: 0.96rem;
+  line-height: 1.1;
 }
 
 .pf-user-pill__avatar {
@@ -351,9 +370,9 @@ table {
 
 .pf-kicker {
   color: var(--pf-accent-strong);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 800;
 }
 
@@ -363,8 +382,9 @@ table {
 
 .pf-lead {
   color: var(--pf-text-muted);
-  font-size: 1.04rem;
-  line-height: 1.75;
+  max-width: 18em;
+  font-size: 1.08rem;
+  line-height: 1.8;
 }
 
 .pf-hero,
@@ -434,14 +454,26 @@ table {
 .pf-hero__copy h1,
 .pf-login__visual h1,
 .pf-dashboard-header h1 {
-  font-family: "Bahnschrift", "Arial Narrow", sans-serif;
-  font-size: clamp(2.4rem, 4vw, 4.2rem);
-  line-height: 0.98;
-  letter-spacing: -0.03em;
+  font-family: var(--font-display), var(--font-body), sans-serif;
+  line-height: 1.03;
+  letter-spacing: -0.05em;
+  font-weight: 800;
+  text-wrap: balance;
+}
+
+.pf-hero__copy h1 {
+  max-width: 11ch;
+  font-size: clamp(3rem, 5vw, 5.25rem);
+}
+
+.pf-login__visual h1 {
+  max-width: 10ch;
+  font-size: clamp(2.4rem, 3.4vw, 3.6rem);
 }
 
 .pf-dashboard-header h1 {
-  font-size: clamp(2rem, 3vw, 3rem);
+  max-width: 14ch;
+  font-size: clamp(2.4rem, 3.3vw, 3.7rem);
 }
 
 .pf-hero__actions {
@@ -495,6 +527,7 @@ table {
 
 .pf-showcase-card--primary {
   display: grid;
+  grid-template-rows: auto auto 1fr auto;
   gap: 20px;
   min-height: 360px;
 }
@@ -527,9 +560,27 @@ table {
   color: var(--pf-text-muted);
 }
 
+.pf-showcase-card__header strong {
+  font-size: 1.16rem;
+  letter-spacing: -0.02em;
+}
+
+.pf-showcase-card__header span {
+  font-size: 0.96rem;
+}
+
 .pf-showcase-list {
   display: grid;
   gap: 12px;
+}
+
+.pf-showcase-list li strong {
+  font-size: 1.04rem;
+  letter-spacing: -0.02em;
+}
+
+.pf-showcase-list li span {
+  font-weight: 600;
 }
 
 .pf-showcase-list li,
@@ -549,6 +600,11 @@ table {
 [data-theme="dark"] .pf-preview-list__item,
 [data-theme="dark"] .pf-exercise-item {
   background: rgba(214, 255, 41, 0.02);
+}
+
+.pf-showcase-card__actions {
+  display: grid;
+  gap: 12px;
 }
 
 .pf-showcase-grid,
@@ -709,6 +765,11 @@ table {
   align-items: flex-end;
   justify-content: space-between;
   gap: 18px;
+}
+
+.pf-dashboard-header > div:first-child {
+  display: grid;
+  gap: 10px;
 }
 
 .pf-dashboard-header p:last-child {
@@ -904,6 +965,14 @@ table {
   background:
     linear-gradient(135deg, rgba(214, 255, 41, 0.12), rgba(12, 15, 18, 0.82)),
     var(--pf-surface);
+}
+
+.pf-banner h2 {
+  max-width: 16ch;
+  font-family: var(--font-display), var(--font-body), sans-serif;
+  font-size: clamp(1.5rem, 2.2vw, 2rem);
+  line-height: 1.18;
+  letter-spacing: -0.04em;
 }
 
 .pf-detail-grid {
@@ -1112,6 +1181,11 @@ table {
 [data-theme="dark"] .pf-next-card p,
 [data-theme="dark"] .pf-insight p,
 [data-theme="dark"] .pf-camera-card p {
+  color: #dce4de;
+}
+
+[data-theme="dark"] .pf-showcase-card__header span,
+[data-theme="dark"] .pf-showcase-list li span {
   color: #dce4de;
 }
 
@@ -1381,6 +1455,10 @@ table {
   .pf-login__visual h1,
   .pf-dashboard-header h1 {
     font-size: 2rem;
+  }
+
+  .pf-banner h2 {
+    font-size: 1.45rem;
   }
 
   .pf-modal {

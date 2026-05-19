@@ -9,7 +9,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Viewer } from "@/lib/viewer";
 
 const APP_NAME = "REPFORGE";
-const APP_TAGLINE = "AI Strength System";
+const APP_TAGLINE = "AI Training System";
 
 type GoalKey = "strength" | "muscle" | "diet" | "health";
 type DurationKey = "under30" | "30to60" | "60to90" | "over90";
@@ -640,15 +640,28 @@ function DashboardWizard({
 }
 
 export function LandingPage({ viewer = null }: { viewer?: null | Viewer }) {
+  const [wizardOpen, setWizardOpen] = useState(false);
+
+  function handleOpenWizard() {
+    setWizardOpen(true);
+  }
+
+  function handleCloseWizard() {
+    const today = getSeoulDateKey();
+    const storageKey = `repforge-daily-wizard:${today}`;
+    window.localStorage.setItem(storageKey, "done");
+    setWizardOpen(false);
+  }
+
   return (
     <AppShell viewer={viewer}>
       <section className="pf-hero">
         <div className="pf-hero__copy">
           <p className="pf-kicker">{APP_TAGLINE}</p>
-          <h1>기록이 쌓일수록 더 강한 루틴이 만들어집니다.</h1>
+          <h1>운동 기록이 쌓일수록, 다음 루틴은 더 정교해집니다.</h1>
           <p className="pf-lead">
-            {APP_NAME}는 근력운동 기록, 다음 세트 추천, 루틴 최적화, 수행 분석, 소셜 동기부여를 하나의
-            흐름으로 연결하는 AI 기반 트레이닝 플랫폼입니다.
+            {APP_NAME}는 운동 기록, 다음 세트 추천, 루틴 최적화, 수행 분석을 하나의 흐름으로 연결해 더
+            정확한 근력운동 루틴을 만들어주는 AI 트레이닝 플랫폼입니다.
           </p>
 
           <div className="pf-hero__actions">
@@ -691,6 +704,12 @@ export function LandingPage({ viewer = null }: { viewer?: null | Viewer }) {
                 </li>
               ))}
             </ul>
+
+            <div className="pf-showcase-card__actions">
+              <button type="button" className="pf-button pf-button--primary pf-button--block" onClick={handleOpenWizard}>
+                오늘 루틴 다시 고르기
+              </button>
+            </div>
           </div>
 
           <div className="pf-showcase-grid">
@@ -705,6 +724,8 @@ export function LandingPage({ viewer = null }: { viewer?: null | Viewer }) {
           </div>
         </div>
       </section>
+
+      <DashboardWizard open={wizardOpen} onClose={handleCloseWizard} />
     </AppShell>
   );
 }
@@ -779,10 +800,9 @@ export function LoginScreenPage({
         <div className="pf-login__visual">
           <div className="pf-login__visual-copy">
             <p className="pf-kicker">{APP_NAME}</p>
-            <h1>나의 운동을 분석하고 최적의 다음 루틴을 제안받으세요.</h1>
+            <h1>운동을 기록할수록, 다음 루틴은 더 정교해집니다.</h1>
             <p>
-              운동 기록 저장, AI 추천, 운동법별 분석, 소셜 피드, 성취 시스템까지 하나의 흐름으로
-              연결됩니다.
+              운동 기록 저장부터 세트 추천, 루틴 최적화, 수행 분석까지 한 흐름으로 이어집니다.
             </p>
 
             <div className="pf-kpi-strip pf-kpi-strip--compact">
@@ -909,7 +929,7 @@ export function DashboardScreenPage({ viewer = null }: { viewer?: null | Viewer 
         <div className="pf-dashboard-header">
           <div>
             <p className="pf-kicker">안녕하세요, {viewer?.displayName ?? "회원"}님</p>
-            <h1>오늘도 데이터 기반으로 더 강하게 훈련해볼까요?</h1>
+            <h1>오늘도 기록을 바탕으로, 더 정확하게 훈련해볼까요?</h1>
           </div>
 
           <div className="pf-header-actions">
@@ -1004,8 +1024,8 @@ export function DashboardScreenPage({ viewer = null }: { viewer?: null | Viewer 
 
           <section className="pf-banner">
             <div>
-              <p className="pf-kicker">기록이 쌓일수록 추천이 정교해집니다</p>
-              <h2>꾸준히 기록하면 {APP_NAME}가 다음 세트와 루틴을 더 정확하게 제안합니다.</h2>
+              <p className="pf-kicker">기록이 쌓일수록 추천은 더 정교해집니다</p>
+              <h2>꾸준한 기록이 쌓일수록 {APP_NAME}의 다음 세트와 루틴 추천은 더 정확해집니다.</h2>
             </div>
             <Link href="/exercise-detail" className="pf-button pf-button--secondary">
               분석 화면 보기
