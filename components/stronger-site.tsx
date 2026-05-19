@@ -899,16 +899,23 @@ export function DashboardScreenPage({ viewer = null }: { viewer?: null | Viewer 
     setWizardOpen(false);
   }
 
+  function handleOpenWizard() {
+    setWizardOpen(true);
+  }
+
   return (
     <AppShell viewer={viewer}>
       <DashboardLayout viewer={viewer}>
         <div className="pf-dashboard-header">
           <div>
-            <p className="pf-kicker">안녕하세요, 홍길동님</p>
+            <p className="pf-kicker">안녕하세요, {viewer?.displayName ?? "회원"}님</p>
             <h1>오늘도 데이터 기반으로 더 강하게 훈련해볼까요?</h1>
           </div>
 
           <div className="pf-header-actions">
+            <button type="button" className="pf-button pf-button--secondary" onClick={handleOpenWizard}>
+              오늘 운동 다시 선택
+            </button>
             <button type="button" className="pf-button pf-button--secondary">
               AI 추천 보기
             </button>
