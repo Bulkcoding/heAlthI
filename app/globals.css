@@ -1014,6 +1014,7 @@ table {
   border-radius: 20px;
   border: 1px solid var(--pf-line);
   background: rgba(255, 255, 255, 0.58);
+  color: var(--pf-text);
   text-align: left;
 }
 
@@ -1031,9 +1032,11 @@ table {
 }
 
 .pf-choice-card--body-part {
+  grid-template-rows: auto auto;
   justify-items: center;
-  min-height: 156px;
-  padding: 16px 14px;
+  min-height: 148px;
+  gap: 10px;
+  padding: 14px 12px;
   text-align: center;
 }
 
@@ -1041,10 +1044,10 @@ table {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 88px;
-  height: 88px;
-  padding: 8px;
-  border-radius: 24px;
+  width: 76px;
+  height: 76px;
+  padding: 7px;
+  border-radius: 22px;
   background:
     radial-gradient(circle at 50% 50%, rgba(255, 226, 74, 0.22), rgba(255, 226, 74, 0) 70%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 242, 232, 0.86));
@@ -1062,6 +1065,8 @@ table {
 
 .pf-choice-card--body-part strong {
   font-size: 0.98rem;
+  line-height: 1.15;
+  color: inherit;
 }
 
 .pf-muscle-icon {
@@ -1088,6 +1093,26 @@ table {
 
 .pf-choice-card--active .pf-choice-card__icon {
   transform: translateY(-1px);
+}
+
+[data-theme="dark"] .pf-choice-card,
+[data-theme="dark"] .pf-choice-card strong {
+  color: #f4f7f4;
+}
+
+[data-theme="dark"] .pf-card__header h2,
+[data-theme="dark"] .pf-modal__title h2,
+[data-theme="dark"] .pf-spotlight h2 {
+  color: #f4f7f4;
+}
+
+[data-theme="dark"] .pf-card__header p,
+[data-theme="dark"] .pf-modal__title p,
+[data-theme="dark"] .pf-choice-card span,
+[data-theme="dark"] .pf-next-card p,
+[data-theme="dark"] .pf-insight p,
+[data-theme="dark"] .pf-camera-card p {
+  color: #dce4de;
 }
 
 .pf-exercise-browser {
