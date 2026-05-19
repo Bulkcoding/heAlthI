@@ -1,9 +1,5 @@
-function getEnv(name: string) {
-  return process.env[name];
-}
-
 function requireEnv(name: string) {
-  const value = getEnv(name);
+  const value = process.env[name];
 
   if (!value) {
     throw new Error(`${name} 환경변수가 설정되지 않았습니다.`);
@@ -13,13 +9,13 @@ function requireEnv(name: string) {
 }
 
 export function getAppUrl() {
-  return getEnv("NEXT_PUBLIC_APP_URL") ?? "http://localhost:3000";
+  return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 }
 
 export function getSupabasePublicEnv() {
-  const url = getEnv("NEXT_PUBLIC_SUPABASE_URL");
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const publishableKey =
-    getEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY") ?? getEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !publishableKey) {
     throw new Error(
@@ -35,8 +31,8 @@ export function getSupabasePublicEnv() {
 
 export function hasSupabasePublicEnv() {
   return Boolean(
-    getEnv("NEXT_PUBLIC_SUPABASE_URL") &&
-      (getEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY") ?? getEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"))
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   );
 }
 
@@ -45,5 +41,5 @@ export function getSupabaseServiceRoleKey() {
 }
 
 export function getSupabaseStorageBucket() {
-  return getEnv("SUPABASE_STORAGE_BUCKET") ?? "workout-media";
+  return process.env.SUPABASE_STORAGE_BUCKET ?? "workout-media";
 }
