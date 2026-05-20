@@ -18,7 +18,8 @@ const displayFont = Sora({
 });
 
 export const metadata: Metadata = {
-  title: "REPFORGE",
+  title: "R-FORCE",
+  applicationName: "R-FORCE",
   description: "AI 기반 근력운동 기록 및 추천 플랫폼"
 };
 

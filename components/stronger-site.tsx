@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
@@ -8,7 +9,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Viewer } from "@/lib/viewer";
 
-const APP_NAME = "REPFORGE";
+const APP_NAME = "R-FORCE";
 const APP_TAGLINE = "AI Training System";
 
 type GoalKey = "strength" | "muscle" | "diet" | "health";
@@ -152,15 +153,34 @@ function LogoutButton() {
   );
 }
 
+function BrandLogo({ compact = false }: { compact?: boolean }) {
+  return (
+    <span className={compact ? "pf-brand-logo pf-brand-logo--compact" : "pf-brand-logo"}>
+      <Image
+        src="/brand/r-force-light.png"
+        alt="R-FORCE"
+        width={216}
+        height={216}
+        className="pf-brand-logo__image pf-brand-logo__image--light"
+        priority
+      />
+      <Image
+        src="/brand/r-force-dark.png"
+        alt="R-FORCE"
+        width={216}
+        height={216}
+        className="pf-brand-logo__image pf-brand-logo__image--dark"
+        priority
+      />
+    </span>
+  );
+}
+
 function AuthenticatedTopbar({ viewer }: { viewer: Viewer }) {
   return (
     <header className="pf-topbar">
       <Link href="/" className="pf-brand">
-        <span className="pf-brand__mark">R</span>
-        <span className="pf-brand__copy">
-          <strong>{APP_NAME}</strong>
-          <small>{APP_TAGLINE}</small>
-        </span>
+        <BrandLogo />
       </Link>
 
       <nav className="pf-topnav">
@@ -188,11 +208,7 @@ function Topbar({ loggedIn = false }: { loggedIn?: boolean }) {
   return (
     <header className="pf-topbar">
       <Link href="/" className="pf-brand">
-        <span className="pf-brand__mark">R</span>
-        <span className="pf-brand__copy">
-          <strong>{APP_NAME}</strong>
-          <small>{APP_TAGLINE}</small>
-        </span>
+        <BrandLogo />
       </Link>
 
       <nav className="pf-topnav">
@@ -236,8 +252,7 @@ function Sidebar() {
   return (
     <aside className="pf-sidebar">
       <Link href="/dashboard" className="pf-sidebar__brand">
-        <span className="pf-brand__mark">R</span>
-        <strong>{APP_NAME}</strong>
+        <BrandLogo compact />
       </Link>
 
       <nav className="pf-sidebar__nav">
@@ -278,8 +293,7 @@ function AuthenticatedSidebar({ viewer }: { viewer: Viewer }) {
   return (
     <aside className="pf-sidebar">
       <Link href="/dashboard" className="pf-sidebar__brand">
-        <span className="pf-brand__mark">R</span>
-        <strong>{APP_NAME}</strong>
+        <BrandLogo compact />
       </Link>
 
       <nav className="pf-sidebar__nav">
