@@ -112,15 +112,17 @@ function getRoutinePreview(parts: string[], goal: GoalKey, duration: DurationKey
 
 function AppShell({
   children,
-  viewer = null
+  viewer = null,
+  showTopbar = true
 }: {
   children: ReactNode;
   viewer?: null | Viewer;
+  showTopbar?: boolean;
 }) {
   return (
     <div className="pf-page">
       <div className="pf-container">
-        {viewer ? <AuthenticatedTopbar viewer={viewer} /> : <Topbar />}
+        {showTopbar ? (viewer ? <AuthenticatedTopbar viewer={viewer} /> : <Topbar />) : null}
         {children}
       </div>
     </div>
@@ -795,36 +797,9 @@ export function LoginScreenPage({
   }
 
   return (
-    <AppShell viewer={viewer}>
-      <section className="pf-login">
-        <div className="pf-login__visual">
-          <div className="pf-login__visual-copy">
-            <p className="pf-kicker">{APP_NAME}</p>
-            <h1>운동을 기록할수록, 다음 루틴은 더 정교해집니다.</h1>
-            <p>
-              운동 기록 저장부터 세트 추천, 루틴 최적화, 수행 분석까지 한 흐름으로 이어집니다.
-            </p>
-
-            <div className="pf-kpi-strip pf-kpi-strip--compact">
-              <div>
-                <strong>250K+</strong>
-                <span>기록 가능한 세션</span>
-              </div>
-              <div>
-                <strong>1.2M+</strong>
-                <span>세트 로그 구조</span>
-              </div>
-              <div>
-                <strong>98%</strong>
-                <span>추천 정확도 목표</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="pf-hero-silhouette" />
-        </div>
-
-        <div className="pf-login-card">
+    <AppShell viewer={viewer} showTopbar={false}>
+      <section className="pf-login pf-login--solo">
+        <div className="pf-login-card pf-login-card--solo">
           <div className="pf-tab-row">
             <button type="button" className="pf-tab-row__item pf-tab-row__item--active">
               로그인

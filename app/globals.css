@@ -395,6 +395,13 @@ table {
   align-items: stretch;
 }
 
+.pf-login--solo {
+  min-height: calc(100vh - 56px);
+  grid-template-columns: minmax(320px, 520px);
+  justify-content: center;
+  align-content: center;
+}
+
 .pf-hero__copy,
 .pf-login__visual,
 .pf-login-card,
@@ -619,6 +626,10 @@ table {
   gap: 18px;
   align-content: center;
   background: var(--pf-surface-strong);
+}
+
+.pf-login-card--solo {
+  width: min(100%, 520px);
 }
 
 .pf-login-form {
