@@ -368,6 +368,17 @@ table {
   font-size: 0.92rem;
 }
 
+.pf-form-success {
+  color: #4cb782;
+  font-size: 0.92rem;
+}
+
+.pf-form-hint {
+  color: var(--pf-text-muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
 .pf-kicker {
   color: var(--pf-accent-strong);
   letter-spacing: 0.14em;

@@ -742,15 +742,27 @@ export function LoginScreenPage({
   viewer?: null | Viewer;
 }) {
   const router = useRouter();
+  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  function switchAuthMode(mode: "login" | "signup") {
+    setAuthMode(mode);
+    setError(null);
+    setNotice(null);
+    setPassword("");
+    setConfirmPassword("");
+  }
 
   async function handleEmailLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     setError(null);
+    setNotice(null);
 
     try {
       const supabase = createSupabaseBrowserClient();
@@ -773,9 +785,60 @@ export function LoginScreenPage({
     }
   }
 
+  async function handleEmailSignup(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    setError(null);
+    setNotice(null);
+
+    if (password.length < 8) {
+      setError("비밀번호는 8자 이상으로 입력해주세요.");
+      setLoading(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("비밀번호 확인이 일치하지 않습니다.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`
+        }
+      });
+
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      if (data.session) {
+        router.push(nextPath);
+        router.refresh();
+        return;
+      }
+
+      setNotice("회원가입이 완료되었습니다. 이메일 인증 후 로그인해주세요.");
+      setPassword("");
+      setConfirmPassword("");
+      setAuthMode("login");
+    } catch (unknownError) {
+      setError(unknownError instanceof Error ? unknownError.message : "회원가입에 실패했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleSocialLogin(provider: "google" | "apple" | "kakao") {
     setLoading(true);
     setError(null);
+    setNotice(null);
 
     try {
       const supabase = createSupabaseBrowserClient();
@@ -801,15 +864,27 @@ export function LoginScreenPage({
       <section className="pf-login pf-login--solo">
         <div className="pf-login-card pf-login-card--solo">
           <div className="pf-tab-row">
-            <button type="button" className="pf-tab-row__item pf-tab-row__item--active">
+            <button
+              type="button"
+              className={
+                authMode === "login" ? "pf-tab-row__item pf-tab-row__item--active" : "pf-tab-row__item"
+              }
+              onClick={() => switchAuthMode("login")}
+            >
               로그인
             </button>
-            <button type="button" className="pf-tab-row__item">
+            <button
+              type="button"
+              className={
+                authMode === "signup" ? "pf-tab-row__item pf-tab-row__item--active" : "pf-tab-row__item"
+              }
+              onClick={() => switchAuthMode("signup")}
+            >
               회원가입
             </button>
           </div>
 
-          <form className="pf-login-form" onSubmit={handleEmailLogin}>
+          <form className="pf-login-form" onSubmit={authMode === "login" ? handleEmailLogin : handleEmailSignup}>
             <div className="pf-field">
               <label htmlFor="email">이메일</label>
               <input
@@ -832,15 +907,32 @@ export function LoginScreenPage({
               />
             </div>
 
-            <div className="pf-inline-row">
-              <label className="pf-check">
-                <input type="checkbox" />
-                <span>로그인 상태 유지</span>
-              </label>
-              <button type="button" className="pf-text-button">
-                비밀번호 찾기
-              </button>
-            </div>
+            {authMode === "signup" ? (
+              <div className="pf-field">
+                <label htmlFor="confirm-password">비밀번호 확인</label>
+                <input
+                  id="confirm-password"
+                  type="password"
+                  placeholder="비밀번호를 다시 입력하세요"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                />
+              </div>
+            ) : null}
+
+            {authMode === "login" ? (
+              <div className="pf-inline-row">
+                <label className="pf-check">
+                  <input type="checkbox" />
+                  <span>로그인 상태 유지</span>
+                </label>
+                <button type="button" className="pf-text-button">
+                  비밀번호 찾기
+                </button>
+              </div>
+            ) : (
+              <p className="pf-form-hint">가입 후 이메일 인증을 완료하면 바로 로그인할 수 있습니다.</p>
+            )}
 
             {authError === "missing_supabase_env" ? (
               <p className="pf-form-error">
@@ -848,10 +940,11 @@ export function LoginScreenPage({
               </p>
             ) : null}
 
+            {notice ? <p className="pf-form-success">{notice}</p> : null}
             {error ? <p className="pf-form-error">{error}</p> : null}
 
             <button type="submit" className="pf-button pf-button--primary pf-button--block" disabled={loading}>
-              {loading ? "로그인 중..." : "로그인"}
+              {loading ? (authMode === "login" ? "로그인 중..." : "가입 중...") : authMode === "login" ? "로그인" : "회원가입"}
             </button>
           </form>
 
