@@ -82,6 +82,19 @@ const sessionSets = [
   { set: "4", weight: "82.5", reps: "5", rpe: "8", rest: "130초" }
 ];
 
+function isEmailConfirmationError(message: string) {
+  const normalized = message.trim().toLowerCase();
+  return normalized.includes("email not confirmed") || normalized.includes("email_not_confirmed");
+}
+
+function getFriendlyAuthErrorMessage(message: string) {
+  if (isEmailConfirmationError(message)) {
+    return "이메일 인증이 아직 완료되지 않았어요. 가입할 때 받은 인증 메일을 확인한 뒤 다시 로그인해주세요.";
+  }
+
+  return message;
+}
+
 function getSeoulDateKey() {
   return new Intl.DateTimeFormat("sv-SE", {
     timeZone: "Asia/Seoul"
@@ -367,19 +380,6 @@ function MiniLineChart() {
         <span>5/09</span>
         <span>5/11</span>
         <span>5/13</span>
-      </div>
-    </div>
-  );
-}
-
-function BodyFigure({ parts }: { parts: string[] }) {
-  return (
-    <div className="pf-body-figure">
-      <div className="pf-body-figure__silhouette" />
-      <div className="pf-body-figure__labels">
-        {parts.map((part) => (
-          <span key={part}>{part}</span>
-        ))}
       </div>
     </div>
   );
@@ -697,7 +697,21 @@ export function LandingPage({ viewer = null }: { viewer?: null | Viewer }) {
               <strong>오늘의 추천 루틴</strong>
               <span>45분</span>
             </div>
-            <BodyFigure parts={["가슴", "어깨", "삼두"]} />
+            <div className="pf-routine-summary">
+              <div>
+                <span>추천 부위</span>
+                <strong>가슴 · 어깨 · 삼두</strong>
+              </div>
+              <div>
+                <span>루틴 성격</span>
+                <strong>상체 집중 · 근비대</strong>
+              </div>
+            </div>
+            <div className="pf-body-figure__labels pf-body-figure__labels--left">
+              {["가슴", "어깨", "삼두"].map((part) => (
+                <span key={part}>{part}</span>
+              ))}
+            </div>
             <ul className="pf-showcase-list">
               {todayRoutine.map((item) => (
                 <li key={item.name}>
@@ -752,11 +766,13 @@ export function LoginScreenPage({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [needsEmailConfirmation, setNeedsEmailConfirmation] = useState(false);
 
   function switchAuthMode(mode: "login" | "signup" | "forgot" | "recovery") {
     setAuthMode(mode);
     setError(null);
     setNotice(null);
+    setNeedsEmailConfirmation(false);
     setPassword("");
     setConfirmPassword("");
   }
@@ -766,6 +782,7 @@ export function LoginScreenPage({
     setLoading(true);
     setError(null);
     setNotice(null);
+    setNeedsEmailConfirmation(false);
 
     try {
       const supabase = createSupabaseBrowserClient({ persistent: rememberMe });
@@ -775,7 +792,8 @@ export function LoginScreenPage({
       });
 
       if (error) {
-        setError(error.message);
+        setError(getFriendlyAuthErrorMessage(error.message));
+        setNeedsEmailConfirmation(isEmailConfirmationError(error.message));
         return;
       }
 
@@ -788,11 +806,47 @@ export function LoginScreenPage({
     }
   }
 
+  async function handleResendConfirmation() {
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail) {
+      setError("인증 메일을 다시 보내려면 먼저 가입한 이메일 주소를 입력해주세요.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setNotice(null);
+
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: trimmedEmail,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`
+        }
+      });
+
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      setNotice("인증 메일을 다시 보냈어요. 받은편지함과 스팸함을 확인한 뒤, 메일 안의 버튼으로 인증을 완료해주세요.");
+    } catch (unknownError) {
+      setError(unknownError instanceof Error ? unknownError.message : "인증 메일 재발송에 실패했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handlePasswordResetRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     setError(null);
     setNotice(null);
+    setNeedsEmailConfirmation(false);
 
     try {
       const supabase = createSupabaseBrowserClient();
@@ -818,6 +872,7 @@ export function LoginScreenPage({
     setLoading(true);
     setError(null);
     setNotice(null);
+    setNeedsEmailConfirmation(false);
 
     if (password.length < 8) {
       setError("비밀번호는 8자 이상으로 입력해주세요.");
@@ -861,6 +916,7 @@ export function LoginScreenPage({
     setLoading(true);
     setError(null);
     setNotice(null);
+    setNeedsEmailConfirmation(false);
 
     if (password.length < 8) {
       setError("비밀번호는 8자 이상으로 입력해주세요.");
@@ -895,7 +951,7 @@ export function LoginScreenPage({
         return;
       }
 
-      setNotice("회원가입이 완료되었습니다. 이메일 인증 후 로그인해주세요.");
+      setNotice("회원가입이 완료되었어요. 받은편지함에서 인증 메일을 확인한 뒤 로그인해주세요.");
       setPassword("");
       setConfirmPassword("");
       setAuthMode("login");
@@ -910,6 +966,7 @@ export function LoginScreenPage({
     setLoading(true);
     setError(null);
     setNotice(null);
+    setNeedsEmailConfirmation(false);
 
     try {
       const supabase = createSupabaseBrowserClient();
@@ -1064,6 +1121,17 @@ export function LoginScreenPage({
             {notice ? <p className="pf-form-success">{notice}</p> : null}
             {error ? <p className="pf-form-error">{error}</p> : null}
 
+            {needsEmailConfirmation ? (
+              <button
+                type="button"
+                className="pf-button pf-button--secondary pf-button--block"
+                disabled={loading}
+                onClick={handleResendConfirmation}
+              >
+                인증 메일 다시 보내기
+              </button>
+            ) : null}
+
             <button type="submit" className="pf-button pf-button--primary pf-button--block" disabled={loading}>
               {loading
                 ? authMode === "login"
@@ -1182,6 +1250,16 @@ export function DashboardScreenPage({ viewer = null }: { viewer?: null | Viewer 
               <div className="pf-routine-card__copy">
                 <span>45분 루틴</span>
                 <strong>가슴 · 어깨 · 삼두</strong>
+                <div className="pf-routine-summary">
+                  <div>
+                    <span>추천 부위</span>
+                    <strong>가슴 · 어깨 · 삼두</strong>
+                  </div>
+                  <div>
+                    <span>루틴 스타일</span>
+                    <strong>상체 집중 · 근비대</strong>
+                  </div>
+                </div>
                 <ul className="pf-list">
                   {todayRoutine.map((item) => (
                     <li key={item.name} className="pf-list__item">
@@ -1191,7 +1269,6 @@ export function DashboardScreenPage({ viewer = null }: { viewer?: null | Viewer 
                   ))}
                 </ul>
               </div>
-              <BodyFigure parts={["가슴", "어깨", "삼두"]} />
             </div>
           </SectionCard>
 

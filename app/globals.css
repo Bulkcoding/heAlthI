@@ -908,6 +908,31 @@ table {
   gap: 12px;
 }
 
+.pf-routine-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.pf-routine-summary > div {
+  padding: 14px 16px;
+  border-radius: var(--pf-radius-md);
+  border: 1px solid var(--pf-line);
+  background: rgba(255, 255, 255, 0.5);
+  display: grid;
+  gap: 6px;
+}
+
+.pf-routine-summary span {
+  color: var(--pf-text-muted);
+  font-size: 0.84rem;
+}
+
+.pf-routine-summary strong {
+  font-size: 0.98rem;
+  letter-spacing: -0.02em;
+}
+
 .pf-routine-card__copy span:first-child {
   color: var(--pf-accent-strong);
   font-weight: 700;
@@ -972,6 +997,10 @@ table {
   flex-wrap: wrap;
   justify-content: center;
   gap: 8px;
+}
+
+.pf-body-figure__labels--left {
+  justify-content: flex-start;
 }
 
 .pf-body-figure__labels span,
@@ -1221,6 +1250,14 @@ table {
   color: #dce4de;
 }
 
+[data-theme="dark"] .pf-routine-summary > div {
+  background: rgba(214, 255, 41, 0.03);
+}
+
+[data-theme="dark"] .pf-routine-summary span {
+  color: #dce4de;
+}
+
 [data-theme="dark"] .pf-showcase-card__header span,
 [data-theme="dark"] .pf-showcase-list li span {
   color: #dce4de;
@@ -1442,6 +1479,7 @@ table {
   .pf-dashboard-header,
   .pf-card__header,
   .pf-routine-card,
+  .pf-routine-summary,
   .pf-banner,
   .pf-modal__footer,
   .pf-topbar__actions,
@@ -1461,6 +1499,7 @@ table {
   .pf-choice-grid--compact,
   .pf-social-row,
   .pf-stepper,
+  .pf-routine-summary,
   .pf-metric-grid {
     grid-template-columns: 1fr;
   }
