@@ -4,6 +4,7 @@ import { getCurrentViewer } from "@/lib/viewer";
 type LoginPageProps = {
   searchParams?: Promise<{
     error?: string;
+    mode?: string;
     next?: string;
   }>;
 };
@@ -15,6 +16,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   return (
     <LoginScreenPage
       authError={resolvedSearchParams?.error ?? null}
+      initialMode={resolvedSearchParams?.mode === "recovery" ? "recovery" : "login"}
       nextPath={resolvedSearchParams?.next ?? "/dashboard"}
       viewer={viewer}
     />

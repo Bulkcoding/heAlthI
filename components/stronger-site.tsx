@@ -735,22 +735,25 @@ export function LandingPage({ viewer = null }: { viewer?: null | Viewer }) {
 export function LoginScreenPage({
   nextPath = "/dashboard",
   authError = null,
+  initialMode = "login",
   viewer = null
 }: {
   nextPath?: string;
   authError?: null | string;
+  initialMode?: "login" | "recovery";
   viewer?: null | Viewer;
 }) {
   const router = useRouter();
-  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
+  const [authMode, setAuthMode] = useState<"login" | "signup" | "forgot" | "recovery">(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
-  function switchAuthMode(mode: "login" | "signup") {
+  function switchAuthMode(mode: "login" | "signup" | "forgot" | "recovery") {
     setAuthMode(mode);
     setError(null);
     setNotice(null);
@@ -765,7 +768,7 @@ export function LoginScreenPage({
     setNotice(null);
 
     try {
-      const supabase = createSupabaseBrowserClient();
+      const supabase = createSupabaseBrowserClient({ persistent: rememberMe });
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -780,6 +783,74 @@ export function LoginScreenPage({
       router.refresh();
     } catch (unknownError) {
       setError(unknownError instanceof Error ? unknownError.message : "로그인에 실패했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handlePasswordResetRequest(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    setError(null);
+    setNotice(null);
+
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/login?mode=recovery&next=${encodeURIComponent(nextPath)}`
+      });
+
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      setNotice("비밀번호 재설정 메일을 보냈습니다. 메일의 링크를 열어 새 비밀번호를 설정해주세요.");
+    } catch (unknownError) {
+      setError(unknownError instanceof Error ? unknownError.message : "비밀번호 재설정 메일 전송에 실패했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleRecoveryUpdate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    setError(null);
+    setNotice(null);
+
+    if (password.length < 8) {
+      setError("비밀번호는 8자 이상으로 입력해주세요.");
+      setLoading(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("비밀번호 확인이 일치하지 않습니다.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.auth.updateUser({
+        password
+      });
+
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      await supabase.auth.signOut();
+      setNotice("비밀번호가 변경되었습니다. 새 비밀번호로 다시 로그인해주세요.");
+      setPassword("");
+      setConfirmPassword("");
+      setAuthMode("login");
+      router.replace(`/login?next=${encodeURIComponent(nextPath)}`);
+      router.refresh();
+    } catch (unknownError) {
+      setError(unknownError instanceof Error ? unknownError.message : "비밀번호 변경에 실패했습니다.");
     } finally {
       setLoading(false);
     }
@@ -882,32 +953,58 @@ export function LoginScreenPage({
             >
               회원가입
             </button>
+            <button
+              type="button"
+              className={
+                authMode === "forgot" || authMode === "recovery"
+                  ? "pf-tab-row__item pf-tab-row__item--active"
+                  : "pf-tab-row__item"
+              }
+              onClick={() => switchAuthMode("forgot")}
+            >
+              비밀번호 찾기
+            </button>
           </div>
 
-          <form className="pf-login-form" onSubmit={authMode === "login" ? handleEmailLogin : handleEmailSignup}>
-            <div className="pf-field">
-              <label htmlFor="email">이메일</label>
-              <input
-                id="email"
-                type="email"
-                placeholder="name@example.com"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-              />
-            </div>
+          <form
+            className="pf-login-form"
+            onSubmit={
+              authMode === "login"
+                ? handleEmailLogin
+                : authMode === "signup"
+                  ? handleEmailSignup
+                  : authMode === "forgot"
+                    ? handlePasswordResetRequest
+                    : handleRecoveryUpdate
+            }
+          >
+            {authMode !== "recovery" ? (
+              <div className="pf-field">
+                <label htmlFor="email">이메일</label>
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                />
+              </div>
+            ) : null}
 
-            <div className="pf-field">
-              <label htmlFor="password">비밀번호</label>
-              <input
-                id="password"
-                type="password"
-                placeholder="비밀번호를 입력하세요"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-              />
-            </div>
+            {authMode !== "forgot" ? (
+              <div className="pf-field">
+                <label htmlFor="password">{authMode === "recovery" ? "새 비밀번호" : "비밀번호"}</label>
+                <input
+                  id="password"
+                  type="password"
+                  placeholder={authMode === "recovery" ? "새 비밀번호를 입력하세요" : "비밀번호를 입력하세요"}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                />
+              </div>
+            ) : null}
 
-            {authMode === "signup" ? (
+            {authMode === "signup" || authMode === "recovery" ? (
               <div className="pf-field">
                 <label htmlFor="confirm-password">비밀번호 확인</label>
                 <input
@@ -923,15 +1020,23 @@ export function LoginScreenPage({
             {authMode === "login" ? (
               <div className="pf-inline-row">
                 <label className="pf-check">
-                  <input type="checkbox" />
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(event) => setRememberMe(event.target.checked)}
+                  />
                   <span>로그인 상태 유지</span>
                 </label>
-                <button type="button" className="pf-text-button">
+                <button type="button" className="pf-text-button" onClick={() => switchAuthMode("forgot")}>
                   비밀번호 찾기
                 </button>
               </div>
-            ) : (
+            ) : authMode === "signup" ? (
               <p className="pf-form-hint">가입 후 이메일 인증을 완료하면 바로 로그인할 수 있습니다.</p>
+            ) : authMode === "forgot" ? (
+              <p className="pf-form-hint">가입한 이메일로 비밀번호 재설정 링크를 보내드립니다.</p>
+            ) : (
+              <p className="pf-form-hint">메일에서 연 비밀번호 재설정 링크로 새 비밀번호를 설정해주세요.</p>
             )}
 
             {authError === "missing_supabase_env" ? (
@@ -944,7 +1049,21 @@ export function LoginScreenPage({
             {error ? <p className="pf-form-error">{error}</p> : null}
 
             <button type="submit" className="pf-button pf-button--primary pf-button--block" disabled={loading}>
-              {loading ? (authMode === "login" ? "로그인 중..." : "가입 중...") : authMode === "login" ? "로그인" : "회원가입"}
+              {loading
+                ? authMode === "login"
+                  ? "로그인 중..."
+                  : authMode === "signup"
+                    ? "가입 중..."
+                    : authMode === "forgot"
+                      ? "전송 중..."
+                      : "변경 중..."
+                : authMode === "login"
+                  ? "로그인"
+                  : authMode === "signup"
+                    ? "회원가입"
+                    : authMode === "forgot"
+                      ? "재설정 메일 보내기"
+                      : "새 비밀번호 저장"}
             </button>
           </form>
 
