@@ -534,7 +534,16 @@ function DashboardWizard({
             </div>
 
             <div className="pf-split-choice">
-              <BodyFigure parts={selectedParts} />
+              <div className="pf-selection-preview">
+                <p className="pf-kicker">선택된 부위</p>
+                <strong>{selectedParts.join(" · ")}</strong>
+                <p>선택한 부위를 기준으로 오늘 루틴의 메인 운동과 보조 운동이 조정됩니다.</p>
+                <div className="pf-body-figure__labels pf-body-figure__labels--left">
+                  {selectedParts.map((part) => (
+                    <span key={part}>{part}</span>
+                  ))}
+                </div>
+              </div>
               <div className="pf-choice-grid pf-choice-grid--compact">
                 {bodyParts.map((part) => {
                   const active = selectedParts.includes(part);
