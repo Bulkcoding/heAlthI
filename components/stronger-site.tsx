@@ -934,6 +934,22 @@ export function LoginScreenPage({
     <AppShell viewer={viewer} showTopbar={false}>
       <section className="pf-login pf-login--solo">
         <div className="pf-login-card pf-login-card--solo">
+          <div className="pf-login-card__header">
+            <div>
+              <p className="pf-kicker">{APP_NAME}</p>
+              <h1 className="pf-login-card__title">
+                {authMode === "signup"
+                  ? "회원가입"
+                  : authMode === "forgot"
+                    ? "비밀번호 찾기"
+                    : authMode === "recovery"
+                      ? "새 비밀번호 설정"
+                      : "로그인"}
+              </h1>
+            </div>
+            <ThemeToggle />
+          </div>
+
           <div className="pf-tab-row">
             <button
               type="button"
