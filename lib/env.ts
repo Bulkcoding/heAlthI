@@ -43,3 +43,27 @@ export function getSupabaseServiceRoleKey() {
 export function getSupabaseStorageBucket() {
   return process.env.SUPABASE_STORAGE_BUCKET ?? "workout-media";
 }
+
+export function getStravaEnv() {
+  return {
+    clientId: requireEnv("STRAVA_CLIENT_ID"),
+    clientSecret: requireEnv("STRAVA_CLIENT_SECRET"),
+    redirectUri: `${getAppUrl()}/api/integrations/strava/callback`
+  };
+}
+
+export function hasStravaEnv() {
+  return Boolean(process.env.STRAVA_CLIENT_ID && process.env.STRAVA_CLIENT_SECRET);
+}
+
+export function getStravaScopes() {
+  return process.env.STRAVA_SCOPES ?? "read,activity:read_all";
+}
+
+export function getIntegrationsEncryptionKey() {
+  return requireEnv("INTEGRATIONS_ENCRYPTION_KEY");
+}
+
+export function hasIntegrationsEncryptionKey() {
+  return Boolean(process.env.INTEGRATIONS_ENCRYPTION_KEY);
+}

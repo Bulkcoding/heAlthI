@@ -701,6 +701,11 @@ table {
   gap: 18px;
 }
 
+.pf-connection-note {
+  display: grid;
+  gap: 16px;
+}
+
 .pf-tab-row {
   display: flex;
   gap: 18px;
@@ -1124,6 +1129,31 @@ table {
   background: rgba(214, 255, 41, 0.02);
 }
 
+.pf-cardio-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.pf-cardio-metric {
+  display: grid;
+  gap: 6px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid var(--pf-line);
+  background: var(--pf-surface-muted);
+}
+
+.pf-cardio-metric span,
+.pf-cardio-metric small {
+  color: var(--pf-text-muted);
+}
+
+.pf-cardio-metric strong {
+  font-size: 1.35rem;
+  line-height: 1.1;
+}
+
 .pf-stepper {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1535,6 +1565,7 @@ table {
   .pf-section-grid,
   .pf-choice-grid,
   .pf-choice-grid--compact,
+  .pf-cardio-metric-grid,
   .pf-social-row,
   .pf-stepper,
   .pf-routine-summary,

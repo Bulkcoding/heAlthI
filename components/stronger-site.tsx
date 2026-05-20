@@ -8,6 +8,7 @@ import { BodyPartIcon } from "@/components/body-part-icon";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Viewer } from "@/lib/viewer";
+import type { CardioLoadSummary } from "@/lib/strava/types";
 
 const APP_NAME = "R-FORCE";
 const APP_TAGLINE = "AI Training System";
@@ -141,6 +142,24 @@ function AppShell({
       </div>
     </div>
   );
+}
+
+type DashboardCardioResponse = {
+  configured: boolean;
+  connected: boolean;
+  error?: string;
+  summary: CardioLoadSummary | null;
+};
+
+function getCardioTypeLabel(activity: CardioLoadSummary["activities"][number]) {
+  const source = activity.sport_type ?? activity.type ?? "Workout";
+
+  if (source === "Run") return "러닝";
+  if (source === "Ride") return "사이클";
+  if (source === "Walk") return "걷기";
+  if (source === "Hike") return "하이킹";
+
+  return source;
 }
 
 function LogoutButton() {
@@ -1186,6 +1205,8 @@ export function LoginScreenPage({
 
 export function DashboardScreenPage({ viewer = null }: { viewer?: null | Viewer }) {
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [cardioState, setCardioState] = useState<DashboardCardioResponse | null>(null);
+  const [cardioLoading, setCardioLoading] = useState(false);
 
   useEffect(() => {
     const today = getSeoulDateKey();
@@ -1196,6 +1217,50 @@ export function DashboardScreenPage({ viewer = null }: { viewer?: null | Viewer 
       setWizardOpen(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (!viewer) {
+      return;
+    }
+
+    let active = true;
+
+    async function loadCardioSummary() {
+      setCardioLoading(true);
+
+      try {
+        const response = await fetch("/api/integrations/strava/cardio-summary", {
+          cache: "no-store"
+        });
+        const data = (await response.json()) as DashboardCardioResponse;
+
+        if (!active) {
+          return;
+        }
+
+        setCardioState(data);
+      } catch {
+        if (active) {
+          setCardioState({
+            configured: true,
+            connected: false,
+            error: "Strava 상태를 불러오지 못했습니다.",
+            summary: null
+          });
+        }
+      } finally {
+        if (active) {
+          setCardioLoading(false);
+        }
+      }
+    }
+
+    void loadCardioSummary();
+
+    return () => {
+      active = false;
+    };
+  }, [viewer]);
 
   function handleCloseWizard() {
     const today = getSeoulDateKey();
@@ -1302,6 +1367,79 @@ export function DashboardScreenPage({ viewer = null }: { viewer?: null | Viewer 
         </div>
 
         <div className="pf-section-grid">
+          <SectionCard
+            title="Strava 연동"
+            subtitle="러닝과 사이클 기록을 함께 읽어 하체 피로와 다음 추천에 반영합니다."
+            action={
+              cardioState?.connected ? (
+                <a href="/api/integrations/strava/connect?next=/dashboard" className="pf-text-button">
+                  다시 연결
+                </a>
+              ) : null
+            }
+          >
+            {cardioLoading ? <p className="pf-form-hint">Strava 활동을 불러오는 중입니다.</p> : null}
+
+            {!cardioLoading && cardioState && !cardioState.configured ? (
+              <p className="pf-form-hint">Strava 환경변수가 아직 연결되지 않았습니다. 배포 환경에 Strava 키를 먼저 설정해주세요.</p>
+            ) : null}
+
+            {!cardioLoading && cardioState?.configured && !cardioState.connected ? (
+              <div className="pf-connection-note">
+                <p>Strava를 연결하면 최근 러닝과 사이클 부하를 보고 다음 하체 세션 볼륨을 보수적으로 조정할 수 있습니다.</p>
+                <a href="/api/integrations/strava/connect?next=/dashboard" className="pf-button pf-button--primary">
+                  Strava 연결하기
+                </a>
+              </div>
+            ) : null}
+
+            {!cardioLoading && cardioState?.connected && cardioState.summary ? (
+              <div className="pf-stack">
+                <div className="pf-cardio-metric-grid">
+                  <div className="pf-cardio-metric">
+                    <span>지난 24시간</span>
+                    <strong>{cardioState.summary.last24Hours.distanceKm} km</strong>
+                    <small>{cardioState.summary.last24Hours.movingMinutes}분</small>
+                  </div>
+                  <div className="pf-cardio-metric">
+                    <span>지난 7일</span>
+                    <strong>{cardioState.summary.last7Days.distanceKm} km</strong>
+                    <small>{cardioState.summary.last7Days.movingHours}시간</small>
+                  </div>
+                  <div className="pf-cardio-metric">
+                    <span>연결 계정</span>
+                    <strong>{cardioState.summary.connectedAthlete?.athleteName ?? "Strava"}</strong>
+                    <small>{cardioState.summary.last7Days.activityCount}개 활동</small>
+                  </div>
+                </div>
+
+                {cardioState.summary.insight ? (
+                  <div className="pf-insight">
+                    <strong>추천 반영</strong>
+                    <p>{cardioState.summary.insight.message}</p>
+                  </div>
+                ) : null}
+
+                <div className="pf-feed">
+                  {cardioState.summary.activities.slice(0, 3).map((activity) => (
+                    <article key={activity.id} className="pf-feed__item">
+                      <div>
+                        <strong>{activity.name}</strong>
+                        <p>
+                          {getCardioTypeLabel(activity)} · {Math.round((activity.distance ?? 0) / 100) / 10}km · {" "}
+                          {Math.round((activity.moving_time ?? activity.elapsed_time ?? 0) / 60)}분
+                        </p>
+                      </div>
+                      <small>{activity.start_date_local ? new Date(activity.start_date_local).toLocaleDateString("ko-KR") : ""}</small>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {!cardioLoading && cardioState?.error ? <p className="pf-form-error">{cardioState.error}</p> : null}
+          </SectionCard>
+
           <SectionCard title="친구 활동" subtitle="친구들의 최근 성과를 확인해보세요.">
             <div className="pf-feed">
               {activityFeed.map((item) => (
